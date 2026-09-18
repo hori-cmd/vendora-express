@@ -1350,6 +1350,21 @@
   .dashboard-sidebar-staff .dashboard-nav-link:focus-visible svg { transform: translateX(2px) scale(1.06); color: #7cecc1; }
 }
 .dashboard-sidebar-staff .dashboard-nav-link:active { transform: translateX(2px) scale(.985); transition-duration: 120ms; }
+.dashboard-sidebar-staff .dashboard-account-footer { width: calc(100% + 16px); margin: 0 -8px -10px; border-top: 1px solid #26334b; }
+.dashboard-sidebar-staff .dashboard-account { min-height: 67px; padding: 16px; }
+.dashboard-sidebar-staff .dashboard-account-avatar { width: 28px; height: 28px; border-radius: 7px; }
+.dashboard-sidebar-staff .dashboard-account-menu { padding: 0 16px 12px; }
+
+/* Admin sidebar follows the same spacing and interaction language. */
+.dashboard-sidebar-admin { background: #0d172b; }
+.dashboard-sidebar-admin .dashboard-sidebar-top { padding: 0 8px 14px; }
+.dashboard-sidebar-admin .dashboard-role { margin-top: 7px; }
+.dashboard-sidebar-admin nav { gap: 3px; padding-top: 12px; padding-bottom: 16px; }
+.dashboard-sidebar-admin nav .dashboard-nav-link { height: 38px; position: relative; letter-spacing: .005em; transform: translateX(0); transition: transform 180ms cubic-bezier(.23,1,.32,1), background-color 180ms ease, color 180ms ease, box-shadow 180ms ease; animation: seller-nav-in 360ms cubic-bezier(.23,1,.32,1) both; }
+.dashboard-sidebar-admin .dashboard-nav-link:nth-child(2){animation-delay:35ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(3){animation-delay:70ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(4){animation-delay:105ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(5){animation-delay:140ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(6){animation-delay:175ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(7){animation-delay:210ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(8){animation-delay:245ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(9){animation-delay:280ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(10){animation-delay:315ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(11){animation-delay:350ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(12){animation-delay:385ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(13){animation-delay:420ms}.dashboard-sidebar-admin .dashboard-nav-link:nth-child(14){animation-delay:455ms}
+.dashboard-sidebar-admin .dashboard-nav-link.is-active{background:#06ad79;box-shadow:0 5px 14px rgba(6,173,121,.16)}
+@media (hover:hover) and (pointer:fine){.dashboard-sidebar-admin .dashboard-nav-link:not(.is-active):hover,.dashboard-sidebar-admin .dashboard-nav-link:not(.is-active):focus-visible{transform:translateX(3px);background:#17253e;color:#f7fffc;box-shadow:inset 2px 0 0 rgba(16,189,133,.62)}.dashboard-sidebar-admin .dashboard-nav-link:hover svg,.dashboard-sidebar-admin .dashboard-nav-link:focus-visible svg{transform:translateX(2px) scale(1.06);color:#7cecc1}}
+.dashboard-sidebar-admin .dashboard-nav-link:active{transform:translateX(2px) scale(.985);transition-duration:120ms}.dashboard-sidebar-admin .dashboard-nav-link svg{transition:transform 180ms cubic-bezier(.23,1,.32,1),color 180ms ease}.dashboard-sidebar-admin .dashboard-account-footer{width:calc(100% + 16px);margin:0 -8px -10px;border-top:1px solid #26334b}.dashboard-sidebar-admin .dashboard-account{min-height:67px;padding:16px}.dashboard-sidebar-admin .dashboard-account-avatar{width:28px;height:28px;border-radius:7px}.dashboard-sidebar-admin .dashboard-account-menu{padding:0 16px 12px}
 
 .dashboard-account:hover,
 .dashboard-account:focus-visible,

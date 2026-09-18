@@ -4,10 +4,10 @@ const shared = ['Profile']
 
 export const dashboardContent = {
   [roles.admin]: {
-    label: 'Administration',
+    label: 'Admin Console',
     title: 'Marketplace overview',
     description: 'Monitor people, sellers, orders, and the health of Vendora Express.',
-    navigation: ['Dashboard', 'Users', 'Sellers', 'Staff', 'Products', 'Categories', 'Orders', 'Reports', 'Settings', ...shared],
+    navigation: ['Dashboard', 'Users', 'Sellers', 'Staff', 'Products', 'Categories', 'Orders', 'Payments', 'Disputes', 'Reports', 'Analytics', 'Settings', 'Audit Logs', 'Security', ...shared],
     metrics: [['Marketplace sales', '$48,240', '+12.4%'], ['Open orders', '184', '+8 today'], ['Seller approvals', '12', '4 need review'], ['Customer satisfaction', '4.8/5', '+0.2 this month']],
     activity: ['12 seller applications await review', 'Low stock alert: 8 catalogue items', 'Three staff permissions were updated'],
   },

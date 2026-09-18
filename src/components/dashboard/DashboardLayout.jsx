@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  Activity,
   AlertTriangle,
   ArrowUpRight,
   BarChart3,
@@ -12,7 +13,9 @@ import {
   DollarSign,
   Eye,
   Flag,
+  FileText,
   Inbox,
+  KeyRound,
   LayoutGrid,
   LogOut,
   MessageSquare,
@@ -23,11 +26,13 @@ import {
   Search,
   SlidersHorizontal,
   Settings,
+  Shield,
   ShoppingBag,
   Star,
   Store,
   Tag,
   Trash2,
+  TrendingUp,
   Users,
   WalletCards,
 } from 'lucide-react'
@@ -41,6 +46,8 @@ import '../../styles/seller-orders.css'
 import '../../styles/seller-wallet.css'
 import '../../styles/staff-dashboard.css'
 import '../../styles/staff-disputes.css'
+import '../../styles/staff-support.css'
+import '../../styles/admin-dashboard.css'
 
 const navigationIcons = {
   Dashboard: LayoutGrid,
@@ -61,7 +68,10 @@ const navigationIcons = {
   Sellers: Package,
   Buyers: Users,
   Reports: ChartColumn,
+  Payments: WalletCards,
   Disputes: AlertTriangle,
+  'Audit Logs': FileText,
+  Security: Shield,
   Support: MessageSquare,
   Notifications: Bell,
   Home: Store,
@@ -90,6 +100,7 @@ function DashboardLayout({ onNavigate }) {
   const [productQuery, setProductQuery] = useState('')
   const [productStatus, setProductStatus] = useState('All')
   const [orderStatus, setOrderStatus] = useState('All')
+  const [userFilter, setUserFilter] = useState('All')
   const [selectedDispute, setSelectedDispute] = useState(null)
   const [productSku, setProductSku] = useState(() => generateProductSku())
   const [productImage, setProductImage] = useState(null)
@@ -103,6 +114,38 @@ function DashboardLayout({ onNavigate }) {
   })
   useEffect(() => () => { if (productImage?.url) URL.revokeObjectURL(productImage.url) }, [productImage])
   useEffect(() => { try { window.localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products)) } catch { /* Local prototype storage can be unavailable or full. */ } }, [products])
+  // Keep the chart tooltip anchored to the cursor without re-rendering the whole dashboard on every move.
+  useEffect(() => {
+    if (user.role !== 'admin' || activePage !== 'Dashboard') return undefined
+    const chartConfigs = [
+      { selector: '.admin-chart-stage', valueLabel: 'Revenue', points: [['Jul', 42000], ['Aug', 58000], ['Sep', 51000], ['Oct', 67000], ['Nov', 89000], ['Dec', 95000]] },
+      { selector: '.admin-orders-stage', valueLabel: 'Orders', points: [['Jul', 300], ['Aug', 420], ['Sep', 389], ['Oct', 500], ['Nov', 670], ['Dec', 720]] },
+    ]
+    const cleanups = chartConfigs.flatMap(({ selector, valueLabel, points }) => {
+      const chart = document.querySelector(selector)
+      const tooltip = chart?.querySelector('.admin-chart-tooltip')
+      const tooltipMonth = tooltip?.querySelector('strong')
+      const tooltipValue = tooltip?.querySelector('span')
+      if (!chart || !tooltip || !tooltipMonth || !tooltipValue) return []
+      const bars = [...chart.querySelectorAll('.admin-order-bar')]
+      const updateTooltip = (event) => {
+        const bounds = chart.getBoundingClientRect()
+        const index = Math.max(0, Math.min(points.length - 1, Math.round(((event.clientX - bounds.left) / bounds.width) * (points.length - 1))))
+        tooltipMonth.textContent = points[index][0]
+        tooltipValue.textContent = `${valueLabel} : ${valueLabel === 'Revenue' ? '$' : ''}${points[index][1].toLocaleString()}`
+        bars.forEach((bar, barIndex) => bar.classList.toggle('is-active', barIndex === index))
+        const pointerX = event.clientX - bounds.left
+        const pointerY = event.clientY - bounds.top
+        const tooltipX = Math.max(12, Math.min(bounds.width - tooltip.offsetWidth - 12, pointerX + 16))
+        const tooltipY = Math.max(12, Math.min(bounds.height - tooltip.offsetHeight - 12, pointerY - tooltip.offsetHeight - 14))
+        tooltip.style.setProperty('--tooltip-x', `${tooltipX}px`)
+        tooltip.style.setProperty('--tooltip-y', `${tooltipY}px`)
+      }
+      chart.addEventListener('mousemove', updateTooltip)
+      return [() => chart.removeEventListener('mousemove', updateTooltip)]
+    })
+    return () => cleanups.forEach((cleanup) => cleanup())
+  }, [activePage, user.role])
   const [hoveredRevenue, setHoveredRevenue] = useState(null)
   const content = dashboardContent[user.role]
   const cartTotal = useMemo(() => cart.reduce((total, product) => total + product.price, 0), [cart])
@@ -142,7 +185,12 @@ function DashboardLayout({ onNavigate }) {
   }
 
   const managementPage = () => {
-    if (user.role === 'staff') {
+    if (user.role === 'admin' && activePage === 'Users') return adminUsersPage()
+    if (user.role === 'admin' && activePage === 'Staff') return adminStaffPage()
+    if (user.role === 'admin' && activePage === 'Payments') return adminPaymentsPage()
+    if (user.role === 'admin' && activePage === 'Audit Logs') return adminAuditLogsPage()
+    if (user.role === 'admin' && activePage === 'Security') return adminSecurityPage()
+    if (user.role === 'staff' || user.role === 'admin') {
       return <section className="dashboard-maintenance-page" aria-label={`${activePage} maintenance`}><div><h1>{activePage}</h1><p>This section is currently under maintenance.</p></div></section>
     }
     const maintenancePages = ['Settings', 'Verification', 'My Store', 'Promotions', 'Reviews', 'Messages', 'Customers']
@@ -213,6 +261,48 @@ function DashboardLayout({ onNavigate }) {
     return <section className="staff-disputes-page" aria-label="Disputes"><div className="staff-disputes-heading"><h1>Disputes</h1><div><label><Search size={16} /><input placeholder="Search disputes..." /></label><button type="button"><SlidersHorizontal size={15} /> Filter</button></div></div><div className="staff-disputes-layout"><div className="staff-dispute-cards">{disputes.map((dispute) => <button type="button" className={`staff-dispute-card ${active[0] === dispute[0] ? 'is-selected' : ''}`} key={dispute[0]} onClick={() => setSelectedDispute(dispute)}><span>{dispute[0]}</span><b className={dispute[4].toLowerCase()}>{dispute[4]}</b><strong>{dispute[1]}</strong><small>{dispute[2]}</small><i>{dispute[3]}</i><em>{dispute[5]}</em></button>)}</div><div className="staff-dispute-detail"><div className="staff-dispute-detail-icon"><AlertTriangle size={25} /></div><h2>Select a dispute</h2><p>Click a dispute from the list to view details and<br />take action.</p></div></div></section>
   }
 
+  // Support ticket queue is isolated so ticket data can be connected independently later.
+  const staffSupportPage = () => {
+    const tickets = [['TKT-2024-441', 'Em', 'Emily Davis', 'Order not received after 14 days', 'Open', 'High', 'Dec 14, 2024'], ['TKT-2024-440', 'No', 'Noah Wilson', 'Unable to process refund for returned item', 'Processing', 'Medium', 'Dec 13, 2024'], ['TKT-2024-439', 'Av', 'Ava Martinez', 'Payment declined but amount deducted', 'Escalated', 'Critical', 'Dec 12, 2024'], ['TKT-2024-438', 'Ma', 'Marcus Johnson', 'Wrong product received from seller', 'Open', 'High', 'Dec 12, 2024'], ['TKT-2024-437', 'Sa', 'Sarah Chen', 'Account verification email not received', 'Delivered', 'Low', 'Dec 11, 2024']]
+    return <section className="staff-support-page" aria-label="Support tickets"><div className="staff-support-heading"><h1>Support Tickets</h1><div><label><Search size={16} /><input placeholder="Search tickets..." /></label><button type="button"><SlidersHorizontal size={15} /> Filter</button></div></div><div className="staff-support-table-shell"><div className="staff-support-table"><div className="staff-support-head"><span>Ticket ID</span><span>User</span><span>Issue</span><span>Status</span><span>Priority</span><span>Created</span></div>{tickets.map(([id, initials, name, issue, status, priority, created]) => <article key={id}><span>{id}</span><div className="staff-support-user"><b>{initials}</b><strong>{name}</strong></div><span>{issue}</span><em className={`ticket-status ${status.toLowerCase()}`}>{status}</em><em className={`ticket-priority ${priority.toLowerCase()}`}>{priority}</em><span>{created}</span></article>)}</div></div></section>
+  }
+
+  const adminUsersPage = () => {
+    const users = [['MJ', 'Marcus Johnson', 'Buyer', 'marcus.j@email.com', 'Active', 'Mar 2023', '23'], ['SC', 'Sarah Chen', 'Buyer', 'sarah.c@email.com', 'Active', 'Jan 2024', '8'], ['AR', 'Alex Rivera', 'Buyer', 'alex.r@email.com', 'Active', 'Jun 2022', '45'], ['ED', 'Emily Davis', 'Buyer', 'emily.d@email.com', 'Active', 'Sep 2023', '12'], ['JK', 'James Kim', 'Buyer', 'james.k@email.com', 'Suspended', 'Feb 2024', '3'], ['TN', 'TechNova Store', 'Seller', 'contact@technovastore.com', 'Active', 'Jan 2022', '15,234'], ['GH', 'GadgetHub', 'Seller', 'contact@gadgethub.com', 'Active', 'Mar 2021', '9,234'], ['SA', 'Style Avenue', 'Seller', 'contact@styleavenue.com', 'Active', 'Jun 2020', '23,456'], ['HS', 'HomeSphere', 'Seller', 'contact@homesphere.com', 'Pending Verification', 'Sep 2023', '4,567']]
+    const visibleUsers = users.filter(([, , role, , status]) => userFilter === 'All' || (userFilter === 'Buyers' && role === 'Buyer') || (userFilter === 'Sellers' && role === 'Seller') || (userFilter === 'Staff' && role === 'Staff') || userFilter === status)
+    return <section className="admin-users-page" aria-label="User management"><div className="admin-users-heading"><h1>User Management</h1><Button type="button" variant="brand"><Plus size={16} /> Add Staff</Button></div><div className="admin-user-filters" role="group" aria-label="User role filter">{['All', 'Buyers', 'Sellers', 'Staff', 'Suspended', 'Pending Verification'].map((filter) => <button type="button" className={userFilter === filter ? 'is-active' : ''} onClick={() => setUserFilter(filter)} key={filter}>{filter}</button>)}</div><div className="admin-users-toolbar"><label><Search size={17} /><input type="search" placeholder="Search users by name, email..." /></label><Button type="button" variant="outline"><SlidersHorizontal size={16} /> Filter</Button><Button type="button" variant="outline"><FileText size={16} /> Export</Button></div><div className="admin-users-table-shell"><div className="admin-users-table" role="table" aria-label="User accounts"><div className="admin-users-table-head" role="row">{['User', 'Role', 'Email', 'Status', 'Joined', 'Orders/Sales'].map((heading) => <span role="columnheader" key={heading}>{heading}</span>)}</div>{visibleUsers.map(([initials, name, role, email, status, joined, orders]) => <article role="row" key={email}><div className="admin-user-name"><b>{initials}</b><strong>{name}</strong><CircleCheck size={14} aria-label="Verified" /></div><em className={`admin-user-role ${role.toLowerCase()}`}>{role}</em><span>{email}</span><em className={`admin-user-status ${status.toLowerCase().replaceAll(' ', '-')}`}>{status}</em><span>{joined}</span><span>{orders}</span></article>)}</div></div></section>
+  }
+
+  const adminStaffPage = () => {
+    const members = [['RF', 'Rachel Foster', 'rachel.f@vendora.com', 'Senior Moderator', 'Moderation', 'Active', 'Today, 9:15 AM', '234'], ['DP', 'Daniel Park', 'daniel.p@vendora.com', 'Support Agent', 'Customer Support', 'Active', 'Today, 8:45 AM', '189'], ['PS', 'Priya Sharma', 'priya.s@vendora.com', 'Seller Verification Specialist', 'Onboarding', 'Active', 'Yesterday', '156'], ['TB', 'Tom Bradley', 'tom.b@vendora.com', 'Dispute Resolver', 'Disputes', 'Inactive', '3 days ago', '423']]
+    const permissions = [['View Orders', [true, true, false, true]], ['Manage Orders', [false, false, false, true]], ['View Sellers', [true, false, true, false]], ['Verify Sellers', [false, false, true, false]], ['Moderate Products', [true, false, false, false]], ['Manage Disputes', [false, false, false, true]], ['Manage Refunds', [false, true, false, true]], ['View Reports', [true, true, false, true]], ['Access Analytics', [true, false, false, false]]]
+    return <section className="admin-staff-page" aria-label="Staff management"><div className="admin-staff-heading"><h1>Staff Management</h1><Button type="button" variant="brand"><Plus size={16} /> Add Staff Member</Button></div><div className="admin-staff-table-shell"><div className="admin-staff-table" role="table" aria-label="Staff members"><div className="admin-staff-table-head" role="row">{['Staff member', 'Role', 'Department', 'Status', 'Last login', 'Tickets', 'Actions'].map((heading) => <span role="columnheader" key={heading}>{heading}</span>)}</div>{members.map(([initials, name, email, role, department, status, lastLogin, tickets]) => <article role="row" key={email}><div className="admin-staff-name"><b>{initials}</b><span><strong>{name}</strong><small>{email}</small></span></div><span>{role}</span><em>{department}</em><i className={status.toLowerCase()}>{status}</i><span>{lastLogin}</span><strong>{tickets}</strong><div className="admin-staff-actions"><button type="button" aria-label={`View ${name}`}><Eye size={16} /></button><button type="button" aria-label={`Manage permissions for ${name}`}><KeyRound size={15} /></button><button type="button" aria-label={`Manage ${name}`}><Users size={16} /></button></div></article>)}</div></div><div className="admin-permissions-shell"><h2>Permissions Matrix</h2><div className="admin-permissions-table" role="table" aria-label="Staff permission matrix"><div role="row">{['Permission', 'Senior Moderator', 'Support Agent', 'Verification Specialist', 'Dispute Resolver'].map((heading) => <strong role="columnheader" key={heading}>{heading}</strong>)}</div>{permissions.map(([permission, access]) => <article role="row" key={permission}><span>{permission}</span>{access.map((allowed, index) => <span key={index}>{allowed ? <CircleCheck size={17} aria-label="Allowed" /> : <CircleHelp size={16} aria-label="Not allowed" />}</span>)}</article>)}</div></div></section>
+  }
+
+  const adminPaymentsPage = () => {
+    const transactions = [['TXN-8821', 'Marcus Johnson', 'TechNova Store', 'VE-2024-8821', '$89.99', '$4.50', 'Credit Card', 'Delivered'], ['TXN-8820', 'Sarah Chen', 'GadgetHub', 'VE-2024-8820', '$499.00', '$24.95', 'Digital Wallet', 'Delivered'], ['TXN-8819', 'Alex Rivera', 'Style Avenue', 'VE-2024-8819', '$119.99', '$6.00', 'Credit Card', 'Delivered'], ['TXN-8818', 'Emily Davis', 'HomeSphere', 'VE-2024-8818', '$189.99', '$9.50', 'Bank Transfer', 'Delivered'], ['TXN-8817', 'James Kim', 'TechNova Store', 'VE-2024-8817', '$899.00', '$44.95', 'Credit Card', 'Delivered'], ['TXN-8816', 'Olivia Brown', 'Style Avenue', 'VE-2024-8816', '$249.99', '$12.50', 'Credit Card', 'Delivered'], ['TXN-8815', 'Noah Wilson', 'Urban Finds', 'VE-2024-8815', '$69.99', '$3.50', 'Digital Wallet', 'Delivered'], ['TXN-8814', 'Ava Martinez', 'GadgetHub', 'VE-2024-8814', '$499.00', '$24.95', '—', 'Pending Approval']]
+    return <section className="admin-payments-page" aria-label="Payments and finance"><h1>Payments &amp; Finance</h1><div className="admin-payment-summary">{[['Total GMV', '$4.9M', '↑ 14% vs last month'], ['Platform Revenue', '$489.2k', '↑ 11% vs last month'], ['Seller Payouts', '$3.8M', '↑ 9% vs last month'], ['Total Refunds', '$89k', '89 refunds']].map(([label, value, detail]) => <article key={label}><p>{label}</p><strong>{value}</strong><span>{detail}</span></article>)}</div><div className="admin-transactions-shell"><div className="admin-transactions-heading"><h2>Recent Transactions</h2><div><Button type="button" variant="outline" size="icon" aria-label="Filter transactions"><SlidersHorizontal size={16} /></Button><Button type="button" variant="outline"><FileText size={16} /> Export CSV</Button></div></div><div className="admin-transactions-table" role="table" aria-label="Recent transactions"><div className="admin-transactions-head" role="row">{['Transaction ID', 'Buyer', 'Seller', 'Order', 'Amount', 'Fee', 'Method', 'Status'].map((heading) => <span role="columnheader" key={heading}>{heading}</span>)}</div>{transactions.map(([id, buyer, seller, order, amount, fee, method, status]) => <article role="row" key={id}><span>{id}</span><strong>{buyer}</strong><strong>{seller}</strong><span>{order}</span><strong>{amount}</strong><b>{fee}</b><span>{method}</span><em className={status === 'Delivered' ? 'delivered' : 'pending'}>{status}</em></article>)}</div></div></section>
+  }
+
+  const adminAuditLogsPage = () => {
+    const logs = [['2024-12-15 14:32:11', 'Ra', 'Rachel Foster', 'Staff', 'Approved seller verification', 'HomeSphere', 'Success'], ['2024-12-15 13:18:42', 'Ad', 'Admin', 'Admin', 'Suspended user account', 'James Kim (Buyer)', 'Success'], ['2024-12-15 12:55:07', 'Da', 'Daniel Park', 'Staff', 'Closed support ticket TKT-438', 'Marcus Johnson', 'Success'], ['2024-12-15 11:40:33', 'Ad', 'Admin', 'Admin', 'Updated platform fee settings', 'System Settings', 'Success'], ['2024-12-15 10:22:18', 'Ra', 'Rachel Foster', 'Staff', 'Removed reported product', 'Style Avenue · Product #6', 'Success'], ['2024-12-15 09:15:55', 'To', 'Tom Bradley', 'Staff', 'Escalated dispute to Admin', 'DIS-2024-443', 'Success'], ['2024-12-14 22:01:44', 'Un', 'Unknown', '—', 'Failed login attempt', 'Admin Console', 'Failed']]
+    return <section className="admin-audit-page" aria-label="Audit logs"><div className="admin-audit-heading"><h1>Audit Logs</h1><div><Button type="button" variant="outline" size="icon" aria-label="Filter audit logs"><SlidersHorizontal size={16} /></Button><Button type="button" variant="outline"><FileText size={16} /> Export</Button></div></div><aside className="admin-audit-notice"><strong>Audit logs are retained for 90 days</strong><span>Export logs regularly for compliance and security purposes.</span></aside><div className="admin-audit-table-shell"><div className="admin-audit-table" role="table" aria-label="Audit log entries"><div className="admin-audit-head" role="row">{['Timestamp', 'User', 'Role', 'Action', 'Resource', 'Status'].map((heading) => <span role="columnheader" key={heading}>{heading}</span>)}</div>{logs.map(([timestamp, initials, name, role, action, resource, status]) => <article role="row" key={`${timestamp}-${name}`}><span>{timestamp}</span><div className="admin-audit-user"><b>{initials}</b><strong>{name}</strong></div><em className={role.toLowerCase()}>{role}</em><strong>{action}</strong><span>{resource}</span><i className={status.toLowerCase()}>{status}</i></article>)}</div></div></section>
+  }
+
+  const adminSecurityPage = () => {
+    const alerts = [['Brute force attempt on Admin account', '2 hours ago', 'critical'], ['Unusual payment activity from seller GadgetHub', '4 hours ago', 'warning'], ['Multiple accounts created from same IP address', '1 day ago', 'warning'], ['SSL certificate renewed successfully', '2 days ago', 'info']]
+    const sessions = [['Ad', 'Admin', 'San Francisco, CA · Chrome / macOS', '192.168.1.1', 'Active now'], ['Ra', 'Rachel Foster', 'New York, NY · Firefox / Windows', '10.0.0.23', '2 hours ago'], ['Da', 'Daniel Park', 'Austin, TX · Chrome / macOS', '10.0.0.45', '4 hours ago']]
+    return <section className="admin-security-page" aria-label="Security center"><h1>Security Center</h1><div className="admin-security-notices"><article><strong>3 Suspicious Login Attempts</strong><span>Multiple failed logins detected from IP 192.168.1.xxx</span></article><article><strong>2FA Not Enabled</strong><span>4 staff accounts have not enabled two-factor authentication.</span></article></div><div className="admin-security-metrics">{[['Active Sessions', '234', Activity], ['Failed Logins', '17', Shield], ['Locked Accounts', '3', Users], ['2FA Enabled', '89%', KeyRound]].map(([label, value, Icon], index) => <article key={label}><span className="admin-security-icon"><Icon size={19} /></span><p>{label}</p><strong>{value}</strong>{index === 1 && <small>Last 24 hours</small>}</article>)}</div><div className="admin-security-grid"><div className="admin-security-panel"><h2><Shield size={18} /> Security Alerts</h2>{alerts.map(([title, time, tone]) => <article className={tone} key={title}><span><Shield size={16} /></span><div><strong>{title}</strong><small>{time}</small></div><Button type="button" variant="outline" size="sm">Review</Button></article>)}</div><div className="admin-security-panel"><h2>Active Admin Sessions</h2>{sessions.map(([initials, name, device, ip, time]) => <article className="admin-session" key={name}><b>{initials}</b><div><strong>{name}</strong><span>{device}</span><small>{ip}</small></div><aside><span>{time}</span><button type="button">Revoke</button></aside></article>)}</div></div></section>
+  }
+
+  // Admin overview surfaces platform-wide health and moderation signals.
+  const adminDashboardPage = () => {
+    const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const axisLabels = ['$100k', '$75k', '$50k', '$25k', '$0k']
+    const metricCards = [['Total GMV', '$4.9M', '↑ 14% vs last month', TrendingUp], ['Platform Revenue', '$489.2k', '↑ 11% vs last month', DollarSign], ['Active Buyers', '34,521', '↑ 9% vs last month', Users], ['Active Sellers', '1,234', '↑ 7% vs last month', Store], ['Active Products', '89,423', '↑ 5% vs last month', Box], ['Total Orders', '23,456', '↑ 8% vs last month', Activity], ['Open Disputes', '34', 'Needs attention', AlertTriangle], ['Pending Verification', '23', 'Seller applications', Shield]]
+    return <section className="admin-dashboard-content" aria-label="Admin dashboard"><div className="admin-dashboard-heading"><div><h1>Admin Dashboard</h1><span>Vendora Express · Platform Overview · Dec 15, 2024</span></div><div><Button type="button" variant="outline"><FileText size={15} /> Export Report</Button><Button type="button" variant="brand"><Activity size={15} /> System Status</Button></div></div><div className="admin-alert-grid"><article><strong>3 Critical Fraud Alerts</strong><span>Suspicious activity detected — immediate review required.</span></article><article><strong>23 Seller Verifications Pending</strong><span>New seller applications awaiting approval.</span></article></div><div className="admin-kpi-grid">{metricCards.map(([label,value,detail,Icon])=><article key={label}><span className="admin-kpi-icon"><Icon size={18} strokeWidth={1.8} /></span><p>{label}</p><strong>{value}</strong><span>{detail}</span></article>)}</div><div className="admin-chart-grid"><Card className="admin-panel"><CardContent><div className="admin-panel-heading"><h2>GMV &amp; Revenue</h2><b>+14% vs last month</b></div><div className="admin-revenue-chart"><div className="admin-axis-y">{axisLabels.map((label) => <span key={label}>{label}</span>)}</div><div className="admin-chart-stage"><div className="admin-chart-gridlines"></div><svg viewBox="0 0 500 160" preserveAspectRatio="none" role="img" aria-label="GMV and revenue trend"><path d="M0 117 C70 80 100 100 150 96 S240 101 300 61 S390 20 500 16" /></svg><div className="admin-chart-tooltip"><strong>Sep</strong><span>Revenue : $51,000</span></div><div className="admin-axis-x">{months.map((month) => <span key={month}>{month}</span>)}</div></div></div></CardContent></Card><Card className="admin-panel"><CardContent><div className="admin-panel-heading"><h2>Orders Volume</h2><b>+8% vs last month</b></div><div className="admin-orders-chart"><div className="admin-axis-y">{['800','600','400','200','0'].map((label) => <span key={label}>{label}</span>)}</div><div className="admin-orders-stage"><div className="admin-chart-gridlines"></div><div className="admin-order-bars">{[37.5,52.5,48.625,62.5,83.75,90].map((height,index)=><i className="admin-order-bar" style={{height:`${height}%`}} key={months[index]}></i>)}</div><div className="admin-chart-tooltip"><strong>Sep</strong><span>Orders : 389</span></div><div className="admin-axis-x">{months.map((month) => <span key={month}>{month}</span>)}</div></div></div></CardContent></Card></div><div className="admin-lower-grid"><Card className="admin-panel"><CardContent><div className="admin-panel-heading"><h2>Recent Orders</h2><button type="button">View All</button></div><div className="admin-empty-data">Order data will appear here when connected.</div></CardContent></Card><Card className="admin-panel"><CardContent><div className="admin-panel-heading"><h2>Platform Health</h2></div>{['Buyer Satisfaction','Seller Performance','Dispute Resolution','On-time Delivery','Fraud Rate'].map((label,index)=><div className={`admin-health-row ${index===4?'risk':''}`} key={label}><span>{label}<b>{index===4?'2%':`${94-index*3}%`}</b></span><i><em style={{width:`${index===4?12:94-index*3}%`}}></em></i></div>)}</CardContent></Card></div></section>
+  }
+
   const sellerDashboardPage = () => (
     (() => {
       const displayName = user.name || user.email?.split('@')[0] || 'seller'
@@ -279,7 +369,7 @@ function DashboardLayout({ onNavigate }) {
           <Button type="button" variant="outline" size="icon" className="dashboard-profile" onClick={() => onNavigate(dashboardPathFor(user.role))}>{user.name.slice(0, 2).toUpperCase()}</Button>
         </header>
 
-        {activePage === 'Home' || activePage === 'Dashboard' ? user.role === 'seller' ? sellerDashboardPage() : user.role === 'staff' ? staffDashboardPage() : <><div className="dashboard-intro">
+        {activePage === 'Home' || activePage === 'Dashboard' ? user.role === 'seller' ? sellerDashboardPage() : user.role === 'staff' ? staffDashboardPage() : user.role === 'admin' ? adminDashboardPage() : <><div className="dashboard-intro">
           <div><p>{content.label}</p><h1>{content.title}</h1><span>{content.description}</span></div>
           <Button type="button" variant="brand" className="dashboard-primary">{user.role === 'buyer' ? 'Browse the shop' : 'View all activity'}</Button>
         </div>
@@ -293,7 +383,7 @@ function DashboardLayout({ onNavigate }) {
         <section className="dashboard-grid">
           <Card className="dashboard-card activity-card"><CardContent><div className="card-heading"><div><p>UPDATES</p><h2>Recent activity</h2></div><Button type="button" variant="ghost" size="sm">View all</Button></div><ul>{content.activity.map((activity) => <li key={activity}><span></span>{activity}<small>Just now</small></li>)}</ul></CardContent></Card>
           <Card className="dashboard-card order-card"><CardContent><div className="card-heading"><div><p>{user.role === 'buyer' ? 'ORDERS' : 'FULFILMENT'}</p><h2>{user.role === 'buyer' ? 'Your latest order' : 'Orders requiring attention'}</h2></div></div><div className="order-row"><div className="order-thumb"></div><div><strong>#VE-1042</strong><p>{user.role === 'buyer' ? 'Hand-woven market tote' : 'Customer order — 3 items'}</p></div><span className="status-badge">{user.role === 'buyer' ? 'In transit' : 'Ready to process'}</span></div></CardContent></Card>
-        </section></> : user.role === 'seller' && activePage === 'Analytics' ? sellerAnalyticsPage() : user.role === 'seller' && activePage === 'Orders' ? sellerOrdersPage() : user.role === 'seller' && activePage === 'Wallet' ? sellerWalletPage() : user.role === 'staff' && activePage === 'Disputes' ? staffDisputesPage() : user.role === 'buyer' ? buyerPage() : managementPage()}
+        </section></> : user.role === 'seller' && activePage === 'Analytics' ? sellerAnalyticsPage() : user.role === 'seller' && activePage === 'Orders' ? sellerOrdersPage() : user.role === 'seller' && activePage === 'Wallet' ? sellerWalletPage() : user.role === 'staff' && activePage === 'Disputes' ? staffDisputesPage() : user.role === 'staff' && activePage === 'Support' ? staffSupportPage() : user.role === 'buyer' ? buyerPage() : managementPage()}
       </section>
     </main>
   )

@@ -3,3 +3,9 @@
 @media (hover:hover) and (pointer:fine){.staff-dispute-card:hover{transform:translateY(-2px);border-color:#c5d5e5;box-shadow:0 9px 19px rgba(16,33,62,.08)}.staff-disputes-heading button:hover{background:#f4f8fb}}
 @media (prefers-reduced-motion:reduce){.staff-dispute-card{transition:none;transform:none}}
 @media (max-width:800px){.staff-disputes-heading{align-items:stretch;flex-direction:column;gap:12px}.staff-disputes-heading>div{width:100%}.staff-disputes-heading label{flex:1}.staff-disputes-layout{grid-template-columns:1fr}}
+.staff-disputes-heading label,.staff-disputes-heading button{box-shadow:0 2px 8px rgba(16,33,62,.04);transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms cubic-bezier(.23,1,.32,1)}
+.staff-disputes-heading label:focus-within{border-color:#9db6cf;box-shadow:0 0 0 3px rgba(74,132,184,.12)}
+.staff-disputes-heading button:hover{transform:translateY(-1px);border-color:#b7c9da;box-shadow:0 6px 14px rgba(16,33,62,.08)}
+.staff-dispute-card{box-shadow:0 2px 5px rgba(16,33,62,.04),0 10px 24px rgba(16,33,62,.04)}
+.staff-dispute-card.is-selected{border-color:#8fb0ce;box-shadow:0 0 0 2px rgba(72,132,182,.12),0 12px 26px rgba(16,33,62,.1)}
+.staff-dispute-detail{box-shadow:0 2px 6px rgba(16,33,62,.04),0 14px 30px rgba(16,33,62,.06)}
