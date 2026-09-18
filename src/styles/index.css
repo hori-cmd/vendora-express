@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+/* ----------------------------------------------------------------------------
+ * Vendora Express - shadcn/ui theme tokens
+ *
+ * NOTE(backend): These CSS variables are what shadcn components read for
+ * colors + borders. Keep the HSL format (hue saturation lightness) because
+ * Tailwind alpha modifiers (bg-primary/20) rely on it.
+ *
+ * Brand mapping (matches your design tokens):
+ *   brand navy   #0F172A   -> used for primary, foreground, and dark accents
+ *   emerald      #10B981   -> used for CTAs, success, and verified states
+ *   off-white    #F8FAFC   -> page background
+ *   white        #FFFFFF   -> card/surface background
+ *   slate        #64748B   -> secondary text
+ *   light slate  #E2E8F0   -> borders + dividers
+ *   amber        #F59E0B   -> warnings
+ *   red          #EF4444   -> errors / danger
+ * -------------------------------------------------------------------------- */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand-navy: #0F172A;
+  --color-brand-emerald: #10B981;
+  --color-brand-emerald-dark: #059669;
+  --color-brand-background: #F8FAFC;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-text: #0F172A;
+  --color-brand-text-muted: #64748B;
+  --color-brand-border: #E2E8F0;
+  --color-brand-warning: #F59E0B;
+  --color-brand-danger: #EF4444;
+  --font-sans:
+    "Avenir Next", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;        /* #F8FAFC  off-white page bg */
+    --foreground: 222 47% 11%;        /* #0F172A  deep navy text */
+    --card: 0 0% 100%;                /* #FFFFFF  cards/modals/forms */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 160 84% 39%;           /* #10B981  emerald buttons */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;  /* #64748B  slate secondary text */
+    --accent: 152 76% 36%;            /* #059669  emerald dark hover */
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;         /* #EF4444  danger */
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;            /* #E2E8F0  light slate border */
+    --input: 214 32% 91%;
+    --ring: 160 84% 39%;              /* focus ring = emerald */
+    --radius: 0.625rem;
+    --warning: 38 92% 50%;            /* #F59E0B  amber warning */
+    --warning-foreground: 222 47% 11%;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 13%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 13%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 158 64% 52%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 152 76% 36%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 158 64% 52%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
